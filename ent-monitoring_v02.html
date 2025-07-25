@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VA Enterprise Monitoring Capabilities</title>
+    <style>
+        body {
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 20px;
+            background: #192841;
+            border-radius: 10px;
+            color: white;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 2.5em;
+            font-weight: 300;
+        }
+        .header p {
+            margin: 10px 0 0 0;
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        .capability-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        .capability-card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border-left: 6px solid;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .capability-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+        }
+        .apm { border-left-color: #ff6b6b; }
+        .infrastructure { border-left-color: #4ecdc4; }
+        .asset { border-left-color: #feca57; }
+        .security { border-left-color: #45b7d1; }
+        .network { border-left-color: #96ceb4; }
+        .service { border-left-color: #ff9ff3; }
+        .capability-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .capability-title {
+            font-size: 1.5em;
+            font-weight: 600;
+            color: #2c3e50;
+            margin: 0;
+        }
+        .expand-btn {
+            margin-left: auto;
+            background: none;
+            border: 2px solid #ddd;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            color: #666;
+            transition: all 0.3s ease;
+        }
+        .expand-btn:hover {
+            background: #f0f0f0;
+            border-color: #bbb;
+        }
+        .expand-btn.expanded {
+            background: #667eea;
+            border-color: #667eea;
+            color: white;
+        }
+        .capabilities-list {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid;
+            display: none;
+        }
+        .capabilities-list.show { display: block; }
+        .apm .capabilities-list { border-left-color: #ff6b6b; }
+        .infrastructure .capabilities-list { border-left-color: #4ecdc4; }
+        .asset .capabilities-list { border-left-color: #feca57; }
+        .security .capabilities-list { border-left-color: #45b7d1; }
+        .network .capabilities-list { border-left-color: #96ceb4; }
+        .service .capabilities-list { border-left-color: #ff9ff3; }
+        .capabilities-list h4 {
+            margin: 0 0 10px 0;
+            color: #333;
+            font-size: 1.1em;
+        }
+        .capabilities-list ul {
+            margin: 0;
+            padding-left: 20px;
+            list-style-type: disc;
+        }
+        .capabilities-list li {
+            margin-bottom: 5px;
+            font-size: 0.9em;
+            color: #555;
+        }
+        .tools-section { margin-top: 20px; }
+        .tools-section h4 {
+            margin: 0 0 15px 0;
+            color: #333;
+            font-size: 1.1em;
+        }
+        .tool-tag {
+            display: inline-block;
+            padding: 8px 14px;
+            margin: 4px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            text-decoration: none;
+            color: inherit;
+        }
+        .tool-tag:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            text-decoration: none;
+            color: inherit;
+        }
+        .tool-tag.has-link { position: relative; }
+        .tool-tag.has-link::after {
+            content: '🔗';
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            font-size: 10px;
+            opacity: 0.7;
+        }
+
+        /* Unique tool color classes */
+        .tool-dynatrace { background: #FF6B6B; color: black }
+        .tool-datadog { background: #6BCB77; color: black }
+        .tool-appdynamics { background: #4D96FF; color: white }
+        .tool-azuremonitor { background: #FFC75F; color: black }
+        .tool-prometheus { background: #845EC2; color: white }
+        .tool-elkstack { background: #F9F871; color: black }
+        .tool-splunk { background: #00C9A7; color: black }
+        .tool-opensearch { background: #FF9671; color: black }
+        .tool-awscloudwatch { background: #0081CF; color: white }
+        .tool-sciencelogic { background: #C34A36; color: white }
+        .tool-ciscointersight { background: #9BDEAC; color: black }
+        .tool-solarwinds { background: #D65DB1; color: black }
+        .tool-microsoftsccm { background: #FBEAFF; color: black }
+        .tool-forescout { background: #B0EACD; color: black }
+        .tool-servicenowdiscovery { background: #F5A623; color: black }
+        .tool-maximo { background: #3A86FF; color: white; }
+        .tool-awscloudtrail { background: #6A4C93; color: white; }
+        .tool-bigfix { background: #E63946; color: white }
+        .tool-tenablenessus { background: #2A9D8F; color: white; }
+        .tool-gigamon { background: #FFB4A2; color: black; }
+        .tool-netscoutngenius { background: #80ED99; color: black; }
+        .tool-servicenow { background: #F0A6CA; color: black }
+        .tool-pagerduty { background: #2D3142; color: white; }
+        .tool-cead { background: grey; color: white; }
+        .non-enterprise {
+            border: 2px dashed #999 !important;
+            opacity: 0.8;
+            font-style: italic;
+        }
+        .non-enterprise::before {
+            content: "※ ";
+            color: #999;
+            font-weight: bold;
+        }
+        .tool-details {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            max-width: 600px;
+            width: 90%;
+        }
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+        }
+        .close-btn:hover { color: #333; }
+        .legend {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        .legend h4 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+        .legend p {
+            margin: 5px 0;
+            font-size: 0.9em;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>VA Enterprise Monitoring Capabilities</h1>
+            <p>The VA's monitoring ecosystem spans cloud and on-premises infrastructure and comprises 20+ tools across 6 core capability areas, providing comprehensive visibility into applications, infrastructure, security, network, assets, and service management. Key overlapping platforms like DynaTrace, SolarWinds, and Splunk enable unified monitoring experiences across multiple domains.</p>
+        </div>
+        <div class="capability-grid">
+            <div class="capability-card apm">
+                <div class="capability-header">
+                    <h2 class="capability-title">Application Performance Management</h2>
+                    <button class="expand-btn" onclick="toggleCapabilities(this)">
+                        +
+                    </button>
+                </div>
+                <div class="capabilities-list">
+                    <h4>Core Capabilities:</h4>
+                    <ul>
+                        <li>Application Health Monitoring</li>
+                        <li>Business Transaction Monitoring</li>
+                        <li>End-User Experience Monitoring</li>
+                        <li>Application Logging & Log Correlation</li>
+                        <li>Distributed Tracing</li>
+                        <li>Code-Level Diagnostics</li>
+                        <li>Application Dependency Mapping</li>
+                        <li>Performance Baseline & Anomaly Detection</li>
+                    </ul>
+                </div>
+                <div class="tools-section">
+                    <h4>Tools:</h4>
+                    <span class="tool-tag tool-dynatrace"
+                        onclick="showToolDetails('DynaTrace')">DynaTrace</span>
+                    <a href="https://vaww.vear.ea.oit.va.gov/#system_and_application_domain_defs_system_88361.htm"
+                        target="_blank" class="tool-tag tool-datadog has-link">Datadog</a>
+                    <span class="tool-tag tool-appdynamics"
+                        onclick="showToolDetails('AppDynamics')">AppDynamics</span>
+                    <a href="https://vaww.vear.ea.oit.va.gov/#system_and_application_domain_defs_system_24653.htm"
+                        target="_blank" class="tool-tag tool-azuremonitor has-link">Azure
+                        Monitor</a>
+                    <span class="tool-tag tool-prometheus non-enterprise"
+                        onclick="showToolDetails('Prometheus')">Prometheus + Grafana</span>
+                    <span class="tool-tag tool-elkstack non-enterprise"
+                        onclick="showToolDetails('ELK Stack')">ELK Stack</span>
+                    <a href="https://vaww.vear.ea.oit.va.gov/#system_and_application_domain_defs_system_143538.htm"
+                        target="_blank" class="tool-tag tool-splunk has-link">Splunk</a>
+                    <span class="tool-tag tool-opensearch non-enterprise"
+                        onclick="showToolDetails('OpenSearch')">OpenSearch</span>
+                </div>
+            </div>
+            <div class="capability-card infrastructure">
+                <div class="capability-header">
+                    <h2 class="capability-title">Infrastructure Monitoring</h2>
+                    <button class="expand-btn" onclick="toggleCapabilities(this)">
+                        +
+                    </button>
+                </div>
+                <div class="capabilities-list">
+                    <h4>Core Capabilities:</h4>
+                    <ul>
+                        <li>System Health Monitoring</li>
+                        <li>Hardware & Physical Server Monitoring</li>
+                        <li>Virtual Machine (VM) Monitoring</li>
+                        <li>Operating System Monitoring</li>
+                        <li>Middleware & Application Server Monitoring</li>
+                        <li>Database Performance Monitoring</li>
+                        <li>Cloud Services Monitoring</li>
+                        <li>Container & Orchestration Monitoring</li>
+                        <li>Storage & Capacity Monitoring</li>
+                    </ul>
+                </div>
+                <div class="tools-section">
+                    <h4>Tools:</h4>
+                    <span class="tool-tag tool-dynatrace"
+                        onclick="showToolDetails('DynaTrace')">DynaTrace</span>
+                    <a href="https://vaww.vear.ea.oit.va.gov/#system_and_application_domain_defs_system_88361.htm"
+                        target="_blank" class="tool-tag tool-datadog has-link">Datadog</a>
+                    <span class="tool-tag tool-appdynamics"
+                        onclick="showToolDetails('AppDynamics')">AppDynamics</span>
+                    <a href="https://vaww.vear.ea.oit.va.gov/#system_and_application_domain_defs_system_24653.htm"
+                        target="_blank" class="tool-tag tool-azuremonitor has-link">Azure
+                        Monitor</a>
+                    <a href="https://vaww.vear.ea.oit.va.gov/#system_and_application_domain_defs_system_24654.htm"
+                        target="_blank" class="tool-tag tool-awscloudwatch has-link">AWS
+                        CloudWatch</a>
+                    <span class="tool-tag tool-prometheus non-enterprise"
+                        onclick="showToolDetails('Prometheus')">Prometheus + Grafana</span>
+                    <span class="tool-tag tool-sciencelogic"
+                        onclick="showToolDetails('ScienceLogic')">ScienceLogic</span>
+                    <a href="https://vaww.vear.ea.oit.va.gov/#system_and_application_domain_defs_system_143538.htm"
+                        target="_blank" class="tool-tag tool-splunk has-link">Splunk</a>
+                    <span class="tool-tag tool-ciscointersight"
+                        onclick="showToolDetails('Cisco Intersight')">Cisco Intersight</span>
+                    <a href="https://vaww.vear.ea.oit.va.gov/#system_and_application_domain_defs_system_156656.htm"
+                        target="_blank" class="tool-tag tool-solarwinds has-link">SolarWinds</a>
+                </div>
+            </div>
+            <div class="capability-card asset">
+                <div class="capability-header">
+                    <h2 class="capability-title">IT Asset Discovery & Management</h2>
+                    <button class="expand-btn" onclick="toggleCapabilities(this)">
+                        +
+                    </button>
+                </div>
+                <div class="capabilities-list">
+                    <h4>Core Capabilities:</h4>
+                    <ul>
+                        <li>Hardware Asset Discovery</li>
+                        <li>Virtual Asset Discovery</li>
+                        <li>Cloud Asset Discovery</li>
+                        <li>End-User Device Discovery</li>
+                        <li>Software Asset Management</li>
+                        <li>Configuration Item (CI) Discovery</li>
+                        <li>Asset Lifecycle Management</li>
+                        <li>CMDB Population & Synchronization</li>
+                    </ul>
+                </div>
+                <div class="tools-section">
+                    <h4>Tools:</h4>
+                    <span class="tool-tag tool-sciencelogic"
+                        onclick="showToolDetails('ScienceLogic')">ScienceLogic</span>
+                    <a href="https://vaww.vear.ea.oit.va.gov/#system_and_application_domain_defs_system_24062.htm"
+                        target="_blank" class="tool-tag tool-microsoftsccm has-link">Microsoft
+                        SCCM</a>
+                    <a href="https://vaww.vear.ea.oit.va.gov/#system_and_application_domain_defs_system_179446.htm"
+                        target="_blank" class="tool-tag tool-bigfix has-link">BigFix</a>
+                    <a href="https://vaww.vear.ea.oit.va.gov/#system_and_application_domain_defs_system_24524.htm"
+                        target="_blank" class="tool-tag tool-forescout has-link">Forescout</a>
+                    <a href="https://vaww.vear.ea.oit.va.gov/#system_and_application_domain_defs_system_156656.htm"
+                        target="_blank" class="tool-tag tool-solarwinds has-link">SolarWinds</a>
+                    <a href="https://vaww.vear.ea.oit.va.gov/#system_and_application_domain_defs_system_24336.htm"
+                        target="_blank" class="tool-tag tool-servicenow has-link">ServiceNow
+                        Discovery</a>
+                    <a href="https://vaww.vear.ea.oit.va.gov/#system_and_application_domain_defs_system_24192.htm"
+                        target="_blank" class="tool-tag tool-maximo has-link">Maximo</a>
+                </div>
+            </div>
+            <div class="capability-card security">
+                <div class="capability-header">
+                    <h2 class="capability-title">Security Monitoring</h2>
+                    <button class="expand-btn" onclick="toggleCapabilities(this)">
+                        +
+                    </button>
+                </div>
+                <div class="capabilities-list">
+                    <h4>Core Capabilities:</h4>
+                    <ul>
+                        <li>Security Information & Event Management (SIEM)</li>
+                        <li>Vulnerability Management & Scanning</li>
+                        <li>Threat Intelligence & Detection</li>
+                        <li>Configuration Compliance Monitoring</li>
+                        <li>Endpoint Detection & Response (EDR)</li>
+                        <li>Network Access Control</li>
+                        <li>Identity & Access Management Monitoring</li>
+                        <li>Security Incident Response</li>
+                    </ul>
+                </div>
+                <div class="tools-section">
+                    <h4>Tools:</h4>
+                    <a href="https://vaww.vear.ea.oit.va.gov/#system_and_application_domain_defs_system_143538.htm"
+                        target="_blank" class="tool-tag tool-splunk has-link">Splunk</a>
+                    <span class="tool-tag tool-elkstack non-enterprise"
+                        onclick="showToolDetails('ELK Stack')">ELK Stack</span>
+                    <a href="https://vaww.vear.ea.oit.va.gov/#system_and_application_domain_defs_system_24654.htm"
+                        target="_blank" class="tool-tag tool-awscloudtrail has-link">AWS
+                        CloudTrail</a>
+                    <a href="https://vaww.vear.ea.oit.va.gov/#system_and_application_domain_defs_system_179446.htm"
+                        target="_blank" class="tool-tag tool-bigfix has-link">BigFix</a>
+                    <a href="https://vaww.vear.ea.oit.va.gov/#system_and_application_domain_defs_system_24260.htm"
+                        target="_blank" class="tool-tag tool-tenablenessus has-link">Tenable
+                        Nessus</a>
+                    <a href="https://vaww.vear.ea.oit.va.gov/#system_and_application_domain_defs_system_24524.htm"
+                        target="_blank" class="tool-tag tool-forescout has-link">Forescout</a>
+                </div>
+            </div>
+            <div class="capability-card network">
+                <div class="capability-header">
+                    <h2 class="capability-title">Network Monitoring</h2>
+                    <button class="expand-btn" onclick="toggleCapabilities(this)">
+                        +
+                    </button>
+                </div>
+                <div class="capabilities-list">
+                    <h4>Core Capabilities:</h4>
+                    <ul>
+                        <li>Network Device Health Monitoring</li>
+                        <li>Network Performance & Latency Monitoring</li>
+                        <li>Traffic Analysis & Flow Monitoring</li>
+                        <li>Bandwidth Utilization Monitoring</li>
+                        <li>Network Topology Discovery</li>
+                        <li>Protocol Analysis</li>
+                        <li>Network Security Monitoring</li>
+                        <li>WAN & SD-WAN Monitoring</li>
+                    </ul>
+                </div>
+                <div class="tools-section">
+                    <h4>Tools:</h4>
+                    <span class="tool-tag tool-ciscointersight"
+                        onclick="showToolDetails('Cisco Intersight')">Cisco Intersight</span>
+                    <a href="https://vaww.vear.ea.oit.va.gov/#system_and_application_domain_defs_system_156656.htm"
+                        target="_blank" class="tool-tag tool-solarwinds has-link">SolarWinds</a>
+                    <a href="https://vaww.vear.ea.oit.va.gov/#system_and_application_domain_defs_system_24523.htm"
+                        target="_blank" class="tool-tag tool-gigamon has-link">Gigamon</a>
+                    <a href="https://vaww.vear.ea.oit.va.gov/#system_and_application_domain_defs_system_186724.htm"
+                        target="_blank" class="tool-tag tool-netscoutngenius has-link">NETSCOUT
+                        nGenius</a>
+                </div>
+            </div>
+            <div class="capability-card service">
+                <div class="capability-header">
+                    <h2 class="capability-title">
+                        Service Management & Incident Response
+                    </h2>
+                    <button class="expand-btn" onclick="toggleCapabilities(this)">
+                        +
+                    </button>
+                </div>
+                <div class="capabilities-list">
+                    <h4>Core Capabilities:</h4>
+                    <ul>
+                        <li>Incident Management</li>
+                        <li>Change Management</li>
+                        <li>Problem Management</li>
+                        <li>Asset & Configuration Linkage</li>
+                        <li>Service Level Management (SLM)</li>
+                        <li>Knowledge Management</li>
+                        <li>Workflow Automation</li>
+                        <li>Service Catalog Management</li>
+                        <li>IT Service Continuity Management</li>
+                    </ul>
+                </div>
+                <div class="tools-section">
+                    <h4>Tools:</h4>
+                    <a href="https://vaww.vear.ea.oit.va.gov/#system_and_application_domain_defs_system_24336.htm"
+                        target="_blank" class="tool-tag tool-servicenow has-link">ServiceNow</a>
+                    <a href="https://vaww.vear.ea.oit.va.gov/#system_and_application_domain_defs_system_378507.htm"
+                        target="_blank" class="tool-tag tool-pagerduty has-link">PagerDuty</a>
+                    <a href="https://cead.va.gov/reports/browse" target="_blank" class="tool-tag tool-cead has-link">CEAD</a>
+                </div>
+            </div>
+        </div>
+        <div class="legend">
+            <h4>Legend:</h4>
+            <p><strong>🔗 Linked Tools:</strong> Click to view detailed VASI information</p>
+            <p><strong>※ Non-Enterprise Tools:</strong> Primarily adopted by individual product teams rather than enterprise-wide deployment</p>
+            <p><strong>Standard Tools:</strong> Click to view tool details and capabilities</p>
+        </div>
+        <div class="overlay" id="overlay" onclick="closeToolDetails()"></div>
+        <div class="tool-details" id="tool-details">
+            <button class="close-btn" onclick="closeToolDetails()">&times;</button>
+            <div id="tool-content"></div>
+        </div>
+    </div>
+    <script>
+        function toggleCapabilities(button) {
+            const card = button.closest(".capability-card");
+            const capabilitiesList = card.querySelector(".capabilities-list");
+            const isExpanded = capabilitiesList.classList.contains("show");
+            if (isExpanded) {
+                capabilitiesList.classList.remove("show");
+                button.textContent = "+";
+                button.classList.remove("expanded");
+            } else {
+                capabilitiesList.classList.add("show");
+                button.textContent = "−";
+                button.classList.add("expanded");
+            }
+        }
+        function showToolDetails(toolName) {
+            const toolData = {
+                DynaTrace: {
+                    title: "DynaTrace",
+                    description: "Software intelligence platform with AI-powered application performance management and infrastructure monitoring",
+                    capabilities: ["Full-stack APM", "AI for Operations", "Infrastructure Monitoring", "Digital Experience Management", "Digital Business Analytics"],
+                    deployment: "Multi-cloud, Hybrid-cloud, Hyperscale environments",
+                    strengths: "AI-powered discovery and mapping, automated problem remediation, microservices and Kubernetes monitoring",
+                },
+                AppDynamics: {
+                    title: "AppDynamics",
+                    description: "Full-stack APM and IT operations analytics tool with controller-based architecture running on GlassFish/MySQL",
+                    capabilities: ["APM", "Infrastructure Monitoring", "End User Monitoring", "Business Metrics Analysis"],
+                    deployment: "Cloud & On-Premises (Controller, Machine Agent, EUM Processor, Enterprise Console)",
+                    strengths: "Root cause analysis within minutes, complete user journey analysis, business metrics translation, funnel analysis",
+                },
+                ScienceLogic: {
+                    title: "ScienceLogic",
+                    description: "Enterprise monitoring platform designed to consolidate monitoring views and reduce monitoring gaps for VAEC cloud services",
+                    capabilities: ["Infrastructure Monitoring", "Cloud Monitoring", "Consolidated Views", "Root Cause Analysis"],
+                    deployment: "Enterprise Cloud Solutions",
+                    strengths: "Monitoring consolidation, gap reduction, mean-time to root cause improvement for cloud-based services",
+                },
+                "ELK Stack": {
+                    title: "ELK Stack",
+                    description: "Open-source log analytics stack (Elasticsearch, Logstash, Kibana) primarily adopted by individual product teams rather than enterprise-wide deployment",
+                    capabilities: ["Log Analytics", "Search & Correlation", "APM (via plugins)", "Security Monitoring"],
+                    deployment: "Product Team Implementations",
+                    strengths: "Open-source flexibility, customizable log processing, real-time search and visualization",
+                },
+                OpenSearch: {
+                    title: "OpenSearch",
+                    description: "Open-source search and analytics suite adopted by product teams as an alternative to proprietary solutions",
+                    capabilities: ["Log Analytics", "Search & Correlation", "APM capabilities"],
+                    deployment: "Product Team Implementations",
+                    strengths: "Open-source flexibility, advanced search capabilities, cost-effective alternative to enterprise solutions",
+                },
+                Prometheus: {
+                    title: "Prometheus + Grafana",
+                    description: "Open-source monitoring stack (Prometheus for metrics collection, Grafana for visualization) commonly adopted by product teams for cloud-native monitoring",
+                    capabilities: ["Infrastructure Monitoring", "Metrics Collection", "Limited APM", "Cloud-Native Monitoring"],
+                    deployment: "Product Team Implementations",
+                    strengths: "Cloud-native architecture, excellent Kubernetes integration, customizable dashboards, open-source ecosystem",
+                },
+                "Cisco Intersight": {
+                    title: "Cisco Intersight",
+                    description: "Cloud-based management platform for Cisco infrastructure",
+                    capabilities: ["Infrastructure Monitoring", "Network Monitoring", "Asset Inventory"],
+                    deployment: "Cloud & On-Premises",
+                    strengths: "Unified infrastructure management, predictive analytics, automation capabilities",
+                },
+            };
+            const tool = toolData[toolName] || {
+                title: toolName,
+                description: "Monitoring tool in the VA enterprise stack",
+                capabilities: ["Various monitoring capabilities"],
+                deployment: "Cloud & On-Premises",
+                strengths: "Specialized monitoring features",
+            };
+            document.getElementById("tool-content").innerHTML = `
+                <h2>${tool.title}</h2>
+                <p><strong>Description:</strong> ${tool.description}</p>
+                <p><strong>Primary Capabilities:</strong> ${tool.capabilities.join(", ")}</p>
+                <p><strong>Deployment:</strong> ${tool.deployment}</p>
+                <p><strong>Key Strengths:</strong> ${tool.strengths}</p>
+            `;
+            document.getElementById("overlay").style.display = "block";
+            document.getElementById("tool-details").style.display = "block";
+        }
+        function closeToolDetails() {
+            document.getElementById("overlay").style.display = "none";
+            document.getElementById("tool-details").style.display = "none";
+        }
+    </script>
+</body>
+</html>
